@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file todo/v1/todo.proto.
  */
 export const file_todo_v1_todo: GenFile = /*@__PURE__*/
-  fileDesc("ChJ0b2RvL3YxL3RvZG8ucHJvdG8SB3RvZG8udjEiTAoIVG9kb0l0ZW0SCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEQoJY29tcGxldGVkGAMgASgIEhIKCmNyZWF0ZWRfYXQYBCABKAMieQoRVG9kb1N0cmVhbVJlcXVlc3QSIwoGYWN0aW9uGAEgASgOMhMudG9kby52MS5BY3Rpb25UeXBlEgoKAmlkGAIgASgJEg0KBXRpdGxlGAMgASgJEhEKCWNvbXBsZXRlZBgEIAEoCBIRCgljbGllbnRfaWQYBSABKAkiiwEKElRvZG9TdHJlYW1SZXNwb25zZRIhCgVldmVudBgBIAEoDjISLnRvZG8udjEuRXZlbnRUeXBlEh8KBGl0ZW0YAiABKAsyES50b2RvLnYxLlRvZG9JdGVtEiAKBXRvZG9zGAMgAygLMhEudG9kby52MS5Ub2RvSXRlbRIPCgdtZXNzYWdlGAQgASgJKoQBCgpBY3Rpb25UeXBlEhsKF0FDVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASFAoQQUNUSU9OX1RZUEVfU1lOQxABEhMKD0FDVElPTl9UWVBFX0FERBACEhYKEkFDVElPTl9UWVBFX1VQREFURRADEhYKEkFDVElPTl9UWVBFX0RFTEVURRAEKpgBCglFdmVudFR5cGUSGgoWRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhMKD0VWRU5UX1RZUEVfU1lOQxABEhQKEEVWRU5UX1RZUEVfQURERUQQAhIWChJFVkVOVF9UWVBFX1VQREFURUQQAxIWChJFVkVOVF9UWVBFX0RFTEVURUQQBBIUChBFVkVOVF9UWVBFX0VSUk9SEAUyWQoLVG9kb1NlcnZpY2USSgoLU3RyZWFtVG9kb3MSGi50b2RvLnYxLlRvZG9TdHJlYW1SZXF1ZXN0GhsudG9kby52MS5Ub2RvU3RyZWFtUmVzcG9uc2UoATABQnAKC2NvbS50b2RvLnYxQglUb2RvUHJvdG9QAVoZc2VydmVyL2dlbi90b2RvL3YxO3RvZG92MaICA1RYWKoCB1RvZG8uVjHKAgdUb2RvXFYx4gITVG9kb1xWMVxHUEJNZXRhZGF0YeoCCFRvZG86OlYxYgZwcm90bzM");
+  fileDesc("ChJ0b2RvL3YxL3RvZG8ucHJvdG8SB3RvZG8udjEiTAoIVG9kb0l0ZW0SCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEQoJY29tcGxldGVkGAMgASgIEhIKCmNyZWF0ZWRfYXQYBCABKAMieQoRVG9kb1N0cmVhbVJlcXVlc3QSIwoGYWN0aW9uGAEgASgOMhMudG9kby52MS5BY3Rpb25UeXBlEgoKAmlkGAIgASgJEg0KBXRpdGxlGAMgASgJEhEKCWNvbXBsZXRlZBgEIAEoCBIRCgljbGllbnRfaWQYBSABKAkiiwEKElRvZG9TdHJlYW1SZXNwb25zZRIhCgVldmVudBgBIAEoDjISLnRvZG8udjEuRXZlbnRUeXBlEh8KBGl0ZW0YAiABKAsyES50b2RvLnYxLlRvZG9JdGVtEiAKBXRvZG9zGAMgAygLMhEudG9kby52MS5Ub2RvSXRlbRIPCgdtZXNzYWdlGAQgASgJIioKFVN1YnNjcmliZVRvZG9zUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkqhAEKCkFjdGlvblR5cGUSGwoXQUNUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIUChBBQ1RJT05fVFlQRV9TWU5DEAESEwoPQUNUSU9OX1RZUEVfQUREEAISFgoSQUNUSU9OX1RZUEVfVVBEQVRFEAMSFgoSQUNUSU9OX1RZUEVfREVMRVRFEAQqmAEKCUV2ZW50VHlwZRIaChZFVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASEwoPRVZFTlRfVFlQRV9TWU5DEAESFAoQRVZFTlRfVFlQRV9BRERFRBACEhYKEkVWRU5UX1RZUEVfVVBEQVRFRBADEhYKEkVWRU5UX1RZUEVfREVMRVRFRBAEEhQKEEVWRU5UX1RZUEVfRVJST1IQBTL0AQoLVG9kb1NlcnZpY2USSAoNRXhlY3V0ZUFjdGlvbhIaLnRvZG8udjEuVG9kb1N0cmVhbVJlcXVlc3QaGy50b2RvLnYxLlRvZG9TdHJlYW1SZXNwb25zZRJPCg5TdWJzY3JpYmVUb2RvcxIeLnRvZG8udjEuU3Vic2NyaWJlVG9kb3NSZXF1ZXN0GhsudG9kby52MS5Ub2RvU3RyZWFtUmVzcG9uc2UwARJKCgtTdHJlYW1Ub2RvcxIaLnRvZG8udjEuVG9kb1N0cmVhbVJlcXVlc3QaGy50b2RvLnYxLlRvZG9TdHJlYW1SZXNwb25zZSgBMAFCcAoLY29tLnRvZG8udjFCCVRvZG9Qcm90b1ABWhlzZXJ2ZXIvZ2VuL3RvZG8vdjE7dG9kb3YxogIDVFhYqgIHVG9kby5WMcoCB1RvZG9cVjHiAhNUb2RvXFYxXEdQQk1ldGFkYXRh6gIIVG9kbzo6VjFiBnByb3RvMw");
 
 /**
  * @generated from message todo.v1.TodoItem
@@ -114,6 +114,23 @@ export const TodoStreamResponseSchema: GenMessage<TodoStreamResponse> = /*@__PUR
   messageDesc(file_todo_v1_todo, 2);
 
 /**
+ * @generated from message todo.v1.SubscribeTodosRequest
+ */
+export type SubscribeTodosRequest = Message<"todo.v1.SubscribeTodosRequest"> & {
+  /**
+   * @generated from field: string client_id = 1;
+   */
+  clientId: string;
+};
+
+/**
+ * Describes the message todo.v1.SubscribeTodosRequest.
+ * Use `create(SubscribeTodosRequestSchema)` to create a new message.
+ */
+export const SubscribeTodosRequestSchema: GenMessage<SubscribeTodosRequest> = /*@__PURE__*/
+  messageDesc(file_todo_v1_todo, 3);
+
+/**
  * @generated from enum todo.v1.ActionType
  */
 export enum ActionType {
@@ -195,7 +212,27 @@ export const EventTypeSchema: GenEnum<EventType> = /*@__PURE__*/
  */
 export const TodoService: GenService<{
   /**
-   * Full BiDi Stream — WebSocket ke through browser mein kaam karta hai
+   * 1. Single Action Dispatcher (Add/Update/Delete/Sync) - HTTP/2 Unary RPC
+   *
+   * @generated from rpc todo.v1.TodoService.ExecuteAction
+   */
+  executeAction: {
+    methodKind: "unary";
+    input: typeof TodoStreamRequestSchema;
+    output: typeof TodoStreamResponseSchema;
+  },
+  /**
+   * 2. Realtime Server Stream (HTTP/2 Fetch ReadableStream)
+   *
+   * @generated from rpc todo.v1.TodoService.SubscribeTodos
+   */
+  subscribeTodos: {
+    methodKind: "server_streaming";
+    input: typeof SubscribeTodosRequestSchema;
+    output: typeof TodoStreamResponseSchema;
+  },
+  /**
+   * 3. Full BiDi Stream (Go/Node clients)
    *
    * @generated from rpc todo.v1.TodoService.StreamTodos
    */

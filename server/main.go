@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	connect "connectrpc.com/connect/v2"
-	"github.com/coder/websocket"
 	"github.com/rs/cors"
-	"github.com/sudorandom/connect-bidi-web/connectwebsocket"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	"server/gen/todo/v1/todov1connect"
 )
 
@@ -16,28 +16,53 @@ func main() {
 	store := NewStore()
 	service := NewTodoService(store)
 
-	srv := connect.NewServer()
-	todov1connect.RegisterTodoServiceHandler(srv, service)
-
-	// WebSocket handler — browser mein bidi stream ke liye
-	wsHandler := connectwebsocket.NewHandler(srv, connectwebsocket.WithAcceptOptions(
-		&websocket.AcceptOptions{InsecureSkipVerify: true},
-	))
-
 	mux := http.NewServeMux()
-	mux.Handle("/", wsHandler)
+	path, handler := todov1connect.NewTodoServiceHandler(service)
+	mux.Handle(path, handler)
 
-	corsHandler := cors.AllowAll().Handler(mux)
+	// Health check endpoint
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	})
+
+	// Configure CORS for Connect-Web
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Accept",
+			"Content-Type",
+			"Connect-Protocol-Version",
+			"Connect-Timeout-Ms",
+			"Connect-Accept-Encoding",
+			"Connect-Content-Encoding",
+			"Grpc-Timeout",
+			"X-Grpc-Web",
+			"X-User-Agent",
+		},
+		ExposedHeaders: []string{
+			"Connect-Protocol-Version",
+			"Connect-Content-Encoding",
+			"Grpc-Status",
+			"Grpc-Message",
+			"Grpc-Status-Details-Bin",
+		},
+		MaxAge: 7200,
+	}).Handler(mux)
+
+	// Default HTTP/2 Cleartext (h2c) handler
+	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8085"
 	}
 
-	log.Printf("🚀 Server: http://localhost:%s", port)
-	log.Printf("🔌 WebSocket: ws://localhost:%s", port)
+	log.Printf("🚀 ConnectRPC HTTP/2 Server: http://localhost:%s", port)
+	log.Printf("📡 Service endpoint: %s", path)
 
-	if err := http.ListenAndServe(":"+port, corsHandler); err != nil {
+	if err := http.ListenAndServe(":"+port, h2cHandler); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }

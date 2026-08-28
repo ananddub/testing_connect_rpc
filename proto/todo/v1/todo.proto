@@ -43,7 +43,17 @@ message TodoStreamResponse {
   string            message = 4;
 }
 
+message SubscribeTodosRequest {
+  string client_id = 1;
+}
+
 service TodoService {
-  // Full BiDi Stream — WebSocket ke through browser mein kaam karta hai
+  // 1. Single Action Dispatcher (Add/Update/Delete/Sync) - HTTP/2 Unary RPC
+  rpc ExecuteAction(TodoStreamRequest) returns (TodoStreamResponse);
+
+  // 2. Realtime Server Stream (HTTP/2 Fetch ReadableStream)
+  rpc SubscribeTodos(SubscribeTodosRequest) returns (stream TodoStreamResponse);
+
+  // 3. Full BiDi Stream (Go/Node clients)
   rpc StreamTodos(stream TodoStreamRequest) returns (stream TodoStreamResponse);
 }

@@ -1,58 +1,34 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { create } from "@bufbuild/protobuf";
 import { todoClient, ActionType, EventType, type TodoItem } from "../lib/connectClient";
-import { TodoStreamRequestSchema, type TodoStreamRequest } from "../gen/todo/v1/todo_pb";
+import {
+  TodoStreamRequestSchema,
+  SubscribeTodosRequestSchema,
+} from "../gen/todo/v1/todo_pb";
 
 export function useTodos() {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [status, setStatus] = useState<string>("Connecting...");
 
-  // send() ka ref — actions is se stream ke through bhejenge
-  const sendRef = useRef<((req: TodoStreamRequest) => void) | null>(null);
-
-  // ── BiDi Stream (WebSocket) ──────────────────────────────
+  // ── 1. Realtime Server Stream (HTTP/2 Fetch ReadableStream) ──
   useEffect(() => {
     const abort = new AbortController();
 
-    // Request queue — AsyncIterable banata hai streamTodos ke liye
-    const pending: TodoStreamRequest[] = [];
-    let notify: (() => void) | null = null;
-    let closed = false;
-
-    sendRef.current = (req) => {
-      console.log("📤 [Client] Enqueuing Action to Stream:", ActionType[req.action], req);
-      pending.push(req);
-      notify?.();
-    };
-
-    async function* requestStream() {
-      while (!closed) {
-        if (pending.length === 0) {
-          await new Promise<void>((r) => { notify = r; });
-          notify = null;
-        }
-        while (pending.length > 0) {
-          const nextReq = pending.shift()!;
-          console.log("🚀 [Client] Yielding to WebSocket:", ActionType[nextReq.action]);
-          yield nextReq;
-        }
-      }
-    }
-
     (async () => {
       try {
-        console.log("🔌 [Client] Connecting BiDi WebSocket stream to ws://localhost:8085...");
+        console.log("🔌 [HTTP/2 Client] Subscribing to realtime stream...");
         setStatus("Connecting...");
 
-        const responses = todoClient.streamTodos(requestStream(), {
-          signal: abort.signal,
-        });
+        const stream = todoClient.subscribeTodos(
+          create(SubscribeTodosRequestSchema, { clientId: "web-client" }),
+          { signal: abort.signal }
+        );
 
-        setStatus("Connected");
-        console.log("✅ [Client] BiDi Stream Active");
+        setStatus("Connected (HTTP/2)");
+        console.log("✅ [HTTP/2 Client] Realtime Stream Active");
 
-        for await (const res of responses) {
-          console.log("📥 [Client] Received Stream Event:", EventType[res.event], res);
+        for await (const res of stream) {
+          console.log("📥 [HTTP/2 Client] Stream Event:", EventType[res.event], res);
 
           if (res.event === EventType.SYNC) {
             setTodos(res.todos);
@@ -69,51 +45,61 @@ export function useTodos() {
         }
       } catch (err: any) {
         if (abort.signal.aborted) {
-          console.log("🔌 [Client] Stream disconnected (aborted)");
+          console.log("🔌 [HTTP/2 Client] Stream disconnected");
         } else {
-          console.error("❌ [Client] Stream Error:", err);
+          console.error("❌ [HTTP/2 Client] Stream Error:", err);
           setStatus("Error: " + (err?.message || String(err)));
         }
       }
     })();
 
     return () => {
-      closed = true;
-      notify?.();
       abort.abort();
-      sendRef.current = null;
     };
   }, []);
 
-  // ── Actions ──────────────────────────────────────────────
+  // ── 2. Action Dispatchers (HTTP/2 Unary RPCs) ────────────────
 
-  const addTodo = useCallback((title: string) => {
+  const addTodo = useCallback(async (title: string) => {
     if (!title.trim()) return;
-    const req = create(TodoStreamRequestSchema, {
-      action: ActionType.ADD,
-      title: title.trim(),
-    });
-    sendRef.current?.(req);
+    try {
+      const req = create(TodoStreamRequestSchema, {
+        action: ActionType.ADD,
+        title: title.trim(),
+      });
+      console.log("📤 [HTTP/2 Client] Dispatching ADD:", title);
+      await todoClient.executeAction(req);
+    } catch (err) {
+      console.error("Failed to add todo:", err);
+    }
   }, []);
 
-  const toggleTodo = useCallback((todo: TodoItem) => {
-    console.log("🔄 [Client] toggleTodo called for ID:", todo.id, "current completed:", todo.completed);
-    const req = create(TodoStreamRequestSchema, {
-      action: ActionType.UPDATE,
-      id: todo.id,
-      title: todo.title,
-      completed: !todo.completed,
-    });
-    sendRef.current?.(req);
+  const toggleTodo = useCallback(async (todo: TodoItem) => {
+    try {
+      const req = create(TodoStreamRequestSchema, {
+        action: ActionType.UPDATE,
+        id: todo.id,
+        title: todo.title,
+        completed: !todo.completed,
+      });
+      console.log("📤 [HTTP/2 Client] Dispatching UPDATE:", todo.id, !todo.completed);
+      await todoClient.executeAction(req);
+    } catch (err) {
+      console.error("Failed to update todo:", err);
+    }
   }, []);
 
-  const deleteTodo = useCallback((id: string) => {
-    console.log("🗑️ [Client] deleteTodo called for ID:", id);
-    const req = create(TodoStreamRequestSchema, {
-      action: ActionType.DELETE,
-      id,
-    });
-    sendRef.current?.(req);
+  const deleteTodo = useCallback(async (id: string) => {
+    try {
+      const req = create(TodoStreamRequestSchema, {
+        action: ActionType.DELETE,
+        id,
+      });
+      console.log("📤 [HTTP/2 Client] Dispatching DELETE:", id);
+      await todoClient.executeAction(req);
+    } catch (err) {
+      console.error("Failed to delete todo:", err);
+    }
   }, []);
 
   return { todos, status, addTodo, toggleTodo, deleteTodo };

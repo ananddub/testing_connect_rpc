@@ -1,38 +1,29 @@
-# ConnectRPC Real-Time Todo
+# ConnectRPC Real-Time Todo (HTTP/2 Default Branch)
 
-Clean & modular Realtime Todo application with **ConnectRPC (gRPC)**, **Go (`gochan/broadcast`)**, and **React (TypeScript + Bun)**.
+This branch (`http2`) implements the **default ConnectRPC architecture over HTTP/2 (Cleartext / h2c)**:
+- **Server Streaming:** Browser subscribes to real-time updates via standard Fetch `ReadableStream` (`SubscribeTodos`).
+- **Action Dispatcher:** Browser executes Add, Toggle, and Delete actions via standard Connect Unary RPCs (`ExecuteAction`).
+- **Pub/Sub:** Backend uses `github.com/amorey/gochan/broadcast` for instant thread-safe broadcast to all connected streams.
 
 ---
 
-## 📁 Split File Structure
+## 🔀 Git Branches Available
 
-### 🔹 Backend (Go)
-```
-server/
-├── main.go       # HTTP / h2c server entrypoint & CORS setup
-├── service.go    # ConnectRPC TodoService implementation (ExecuteAction, SubscribeTodos)
-├── store.go      # In-memory Todo store & gochan broadcast pub/sub
-└── gen/          # Protobuf & ConnectRPC generated stubs
-```
+* **`websocket` branch:** Full Bi-Directional Streaming over WebSockets (`ws://localhost:8085`)
+* **`http2` branch (this branch):** Native ConnectRPC over HTTP/2 (`http://localhost:8085`)
 
-### 🔹 Frontend (Vite + React + Bun)
-```
-client/src/
-├── App.tsx                    # Main container
-├── components/
-│   ├── TodoForm.tsx           # Add todo input component
-│   ├── TodoList.tsx           # Todo list container
-│   └── TodoItem.tsx           # Single todo row with toggle & delete
-├── hooks/
-│   └── useTodos.ts            # Custom hook for realtime stream & actions
-├── lib/
-│   └── connectClient.ts       # Connect client initialization
-└── gen/                       # Generated Protobuf & Connect stubs
+### Switch Branches:
+```bash
+# Switch to WebSocket branch
+git checkout websocket
+
+# Switch to HTTP/2 branch
+git checkout http2
 ```
 
 ---
 
-## 🚀 How to Run
+## 🚀 How to Run (HTTP/2 Branch)
 
 ### 1. Run Backend (Go)
 ```bash
@@ -46,4 +37,5 @@ cd client
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in multiple tabs to test real-time instant synchronization!
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open multiple tabs to watch real-time synchronisation across clients!

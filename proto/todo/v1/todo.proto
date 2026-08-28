@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package todo.v1;
+
+option go_package = "server/gen/todo/v1;todov1";
+
+enum ActionType {
+  ACTION_TYPE_UNSPECIFIED = 0;
+  ACTION_TYPE_SYNC        = 1;
+  ACTION_TYPE_ADD         = 2;
+  ACTION_TYPE_UPDATE      = 3;
+  ACTION_TYPE_DELETE      = 4;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_SYNC        = 1;
+  EVENT_TYPE_ADDED       = 2;
+  EVENT_TYPE_UPDATED     = 3;
+  EVENT_TYPE_DELETED     = 4;
+  EVENT_TYPE_ERROR       = 5;
+}
+
+message TodoItem {
+  string id         = 1;
+  string title      = 2;
+  bool   completed  = 3;
+  int64  created_at = 4;
+}
+
+message TodoStreamRequest {
+  ActionType action    = 1;
+  string     id        = 2;
+  string     title     = 3;
+  bool       completed = 4;
+  string     client_id = 5;
+}
+
+message TodoStreamResponse {
+  EventType         event   = 1;
+  TodoItem          item    = 2;
+  repeated TodoItem todos   = 3;
+  string            message = 4;
+}
+
+service TodoService {
+  // Full BiDi Stream — WebSocket ke through browser mein kaam karta hai
+  rpc StreamTodos(stream TodoStreamRequest) returns (stream TodoStreamResponse);
+}

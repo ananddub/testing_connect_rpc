@@ -1,0 +1,13 @@
+version: v2
+managed:
+  enabled: true
+plugins:
+  - local: protoc-gen-go
+    out: server/gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: server/gen
+    opt: paths=source_relative
+  - local: [npx, --yes, "@bufbuild/protoc-gen-es"]
+    out: client/src/gen
+    opt: target=ts

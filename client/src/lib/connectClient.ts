@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Original standard ConnectRPC transport over HTTP
+// Same-origin transport (works seamlessly when embedded in Go server or standalone)
 const transport = createConnectTransport({
-  baseUrl: "http://localhost:8085",
+  baseUrl: typeof window !== "undefined" ? window.location.origin : "http://localhost:8085",
 });
 
 export const todoClient = createClient(TodoService, transport);

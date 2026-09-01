@@ -11,8 +11,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    watch: {
-      usePolling: true,
+    proxy: {
+      '/todo.v1.TodoService': {
+        target: 'https://localhost:8085',
+        secure: false, // self-signed cert allow karta hai
+        changeOrigin: true,
+      },
     },
   },
 })

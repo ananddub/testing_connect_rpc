@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// ConnectRPC client over HTTPS / HTTP/2 (ALPN h2)
+// Vite proxy ke through seedha connect karega (Zero SSL & CORS issues)
 const transport = createConnectTransport({
-  baseUrl: "https://localhost:8085",
+  baseUrl: "",
 });
 
 export const todoClient = createClient(TodoService, transport);

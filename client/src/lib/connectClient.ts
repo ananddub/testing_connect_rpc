@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Same-origin transport (works seamlessly when embedded in Go server or standalone)
+// Same-origin relative path for pure HTTPS / HTTP/2 (h2)
 const transport = createConnectTransport({
-  baseUrl: typeof window !== "undefined" ? window.location.origin : "http://localhost:8085",
+  baseUrl: "",
 });
 
 export const todoClient = createClient(TodoService, transport);

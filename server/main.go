@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"embed"
 	"io/fs"
 	"log"
@@ -10,13 +11,52 @@ import (
 
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 
 	"server/gen/todo/v1/todov1connect"
 )
 
 //go:embed all:dist
 var distFS embed.FS
+
+// loggingMiddleware logs incoming request protocols
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ignore health check from cluttering logs
+		if r.URL.Path == "/healthz" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Detect RPC Protocol
+		rpcProtocol := "HTTP / Static Asset"
+		ct := r.Header.Get("Content-Type")
+		connectVer := r.Header.Get("Connect-Protocol-Version")
+
+		if connectVer != "" {
+			rpcProtocol = "Connect Protocol (v" + connectVer + ")"
+		} else if strings.HasPrefix(ct, "application/grpc-web") {
+			rpcProtocol = "gRPC-Web"
+		} else if strings.HasPrefix(ct, "application/grpc") {
+			rpcProtocol = "gRPC"
+		}
+
+		alpn := "none"
+		if r.TLS != nil && r.TLS.NegotiatedProtocol != "" {
+			alpn = r.TLS.NegotiatedProtocol
+		}
+
+		log.Printf("🌐 [REQUEST] %s %s | Transport: %s (ALPN: %s) | RPC: %s | Client: %s",
+			r.Method,
+			r.URL.Path,
+			r.Proto,
+			alpn,
+			rpcProtocol,
+			r.RemoteAddr,
+		)
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	store := NewStore()
@@ -85,19 +125,43 @@ func main() {
 		MaxAge: 7200,
 	}).Handler(mux)
 
-	// Standard ConnectRPC HTTP/2 Cleartext (h2c) Handler
-	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
+	// Protocol logging middleware
+	loggedHandler := loggingMiddleware(corsHandler)
+
+	// Load TLS Certificates
+	tlsCert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	if err != nil {
+		log.Fatalf("Failed to load TLS cert: %v", err)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8085"
 	}
 
-	log.Printf("🚀 All-in-One ConnectRPC & Embedded React Server: http://localhost:%s", port)
-	log.Printf("📡 Service endpoint: %s", path)
-	log.Printf("💻 Embedded Web UI: http://localhost:%s", port)
+	// TLS Config with explicit "h2" ALPN
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{tlsCert},
+		NextProtos:   []string{"h2", "http/1.1"},
+	}
 
-	if err := http.ListenAndServe(":"+port, h2cHandler); err != nil {
+	srv := &http.Server{
+		Addr:      ":" + port,
+		Handler:   loggedHandler,
+		TLSConfig: tlsConfig,
+	}
+
+	// Configure HTTP/2 server
+	if err := http2.ConfigureServer(srv, &http2.Server{}); err != nil {
+		log.Fatalf("Failed to configure HTTP/2: %v", err)
+	}
+
+	log.Printf("🚀 ConnectRPC HTTPS / HTTP/2 Server: https://localhost:%s", port)
+	log.Printf("📡 Service endpoint: %s", path)
+	log.Printf("💻 Embedded Web UI: https://localhost:%s", port)
+	log.Printf("🔒 ALPN: ['h2', 'http/1.1'] enabled")
+
+	if err := srv.ListenAndServeTLS("", ""); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }

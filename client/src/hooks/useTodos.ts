@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { create } from "@bufbuild/protobuf";
+import { Code, ConnectError } from "@connectrpc/connect";
 import { todoClient, ActionType, EventType, type TodoItem } from "../lib/connectClient";
 import {
   TodoStreamRequestSchema,
@@ -24,10 +25,8 @@ export function useTodos() {
           { signal: abort.signal }
         );
 
-        setStatus("Connected (HTTP/2)");
-        console.log("✅ [HTTP/2 Client] Realtime Stream Active");
-
         for await (const res of stream) {
+          setStatus("Connected (HTTP/2)");
           console.log("📥 [HTTP/2 Client] Stream Event:", EventType[res.event], res);
 
           if (res.event === EventType.SYNC) {
@@ -44,10 +43,20 @@ export function useTodos() {
           }
         }
       } catch (err: any) {
-        if (abort.signal.aborted) {
-          console.log("🔌 [HTTP/2 Client] Stream disconnected");
+        // Ignore expected abort / canceled signals from React StrictMode cleanup
+        if (
+          abort.signal.aborted ||
+          err?.name === "AbortError" ||
+          (err instanceof ConnectError && err.code === Code.Canceled)
+        ) {
+          console.log("🔌 [HTTP/2 Client] Stream closed (cleaned up)");
+          return;
+        }
+
+        console.error("❌ [HTTP/2 Client] Stream Error:", err);
+        if (err instanceof TypeError && err.message.includes("Failed to fetch")) {
+          setStatus("SSL Error: Open https://localhost:8085/healthz & Accept Cert");
         } else {
-          console.error("❌ [HTTP/2 Client] Stream Error:", err);
           setStatus("Error: " + (err?.message || String(err)));
         }
       }

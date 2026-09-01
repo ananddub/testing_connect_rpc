@@ -126,17 +126,7 @@ func main() {
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders: []string{
-			"Accept",
-			"Content-Type",
-			"Connect-Protocol-Version",
-			"Connect-Timeout-Ms",
-			"Connect-Accept-Encoding",
-			"Connect-Content-Encoding",
-			"Grpc-Timeout",
-			"X-Grpc-Web",
-			"X-User-Agent",
-		},
+		AllowedHeaders: []string{"*"},
 		ExposedHeaders: []string{
 			"Connect-Protocol-Version",
 			"Connect-Content-Encoding",

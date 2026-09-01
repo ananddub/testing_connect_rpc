@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Vite proxy ke through seedha connect karega (Zero SSL & CORS issues)
+// Direct browser connection to Go HTTPS / HTTP/2 backend (ALPN: h2)
 const transport = createConnectTransport({
-  baseUrl: "",
+  baseUrl: "https://localhost:8085",
 });
 
 export const todoClient = createClient(TodoService, transport);

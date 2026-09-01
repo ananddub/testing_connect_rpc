@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rs/cors"
@@ -22,7 +23,6 @@ import (
 
 // generateCert generates self-signed TLS cert with ALPN h2 support
 func generateCert() (tls.Certificate, error) {
-	// If cert files exist on disk, load them
 	if _, err1 := os.Stat("cert.pem"); err1 == nil {
 		if _, err2 := os.Stat("key.pem"); err2 == nil {
 			return tls.LoadX509KeyPair("cert.pem", "key.pem")
@@ -62,6 +62,49 @@ func generateCert() (tls.Certificate, error) {
 	_ = os.WriteFile("key.pem", keyPEM, 0600)
 
 	return tls.X509KeyPair(certPEM, keyPEM)
+}
+
+// loggingMiddleware logs incoming request protocols (HTTP/2, ALPN, Connect, gRPC, gRPC-Web)
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ignore health check from cluttering logs
+		if r.URL.Path == "/healthz" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Detect RPC Protocol
+		rpcProtocol := "HTTP / REST"
+		ct := r.Header.Get("Content-Type")
+		connectVer := r.Header.Get("Connect-Protocol-Version")
+
+		if connectVer != "" {
+			rpcProtocol = "Connect Protocol (v" + connectVer + ")"
+		} else if strings.HasPrefix(ct, "application/grpc-web") {
+			rpcProtocol = "gRPC-Web"
+		} else if strings.HasPrefix(ct, "application/grpc") {
+			rpcProtocol = "gRPC"
+		}
+
+		// HTTP transport protocol
+		httpVersion := r.Proto // "HTTP/2.0" or "HTTP/1.1"
+		alpn := "none"
+		if r.TLS != nil && r.TLS.NegotiatedProtocol != "" {
+			alpn = r.TLS.NegotiatedProtocol
+		}
+
+		log.Printf("🌐 [REQUEST] %s %s | Transport: %s (ALPN: %s) | RPC: %s | Content-Type: %s | Client: %s",
+			r.Method,
+			r.URL.Path,
+			httpVersion,
+			alpn,
+			rpcProtocol,
+			ct,
+			r.RemoteAddr,
+		)
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -104,6 +147,9 @@ func main() {
 		MaxAge: 7200,
 	}).Handler(mux)
 
+	// Wrap with protocol logging middleware
+	loggedHandler := loggingMiddleware(corsHandler)
+
 	// Generate / Load TLS Certificate
 	tlsCert, err := generateCert()
 	if err != nil {
@@ -123,7 +169,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:      ":" + port,
-		Handler:   corsHandler,
+		Handler:   loggedHandler,
 		TLSConfig: tlsConfig,
 	}
 

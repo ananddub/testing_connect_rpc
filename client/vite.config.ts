@@ -1,12 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    basicSsl(),
   ],
   server: {
     port: 5173,
@@ -14,7 +16,7 @@ export default defineConfig({
     proxy: {
       '/todo.v1.TodoService': {
         target: 'https://localhost:8085',
-        secure: false, // self-signed cert allow karta hai
+        secure: false,
         changeOrigin: true,
       },
     },

@@ -18,6 +18,22 @@ import (
 //go:embed all:dist
 var distFS embed.FS
 
+// strictHTTP2Middleware strictly blocks HTTP/1.0 and HTTP/1.1 requests
+func strictHTTP2Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor < 2 {
+			log.Printf("🚫 [HTTP/1.1 BLOCKED] %s %s from %s (Protocol: %s)",
+				r.Method, r.URL.Path, r.RemoteAddr, r.Proto)
+			http.Error(w, "505 HTTP Version Not Supported: Strict HTTP/2 only. HTTP/1.1 is rejected.", http.StatusHTTPVersionNotSupported)
+			return
+		}
+
+		log.Printf("✅ [HTTP/2 ACCEPTED] %s %s from %s (Protocol: %s)",
+			r.Method, r.URL.Path, r.RemoteAddr, r.Proto)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	store := NewStore()
 	service := NewTodoService(store)
@@ -32,7 +48,7 @@ func main() {
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK (Strict HTTP/2)"))
 	})
 
 	// 3. Embedded React Frontend SPA Handler
@@ -85,17 +101,20 @@ func main() {
 		MaxAge: 7200,
 	}).Handler(mux)
 
+	// Wrap with strict HTTP/2 check
+	strictHandler := strictHTTP2Middleware(corsHandler)
+
 	// Standard ConnectRPC HTTP/2 Cleartext (h2c) Handler
-	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
+	h2cHandler := h2c.NewHandler(strictHandler, &http2.Server{})
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8085"
 	}
 
-	log.Printf("🚀 All-in-One ConnectRPC & Embedded React Server: http://localhost:%s", port)
+	log.Printf("🚀 Strict HTTP/2-ONLY ConnectRPC Server: http://localhost:%s", port)
 	log.Printf("📡 Service endpoint: %s", path)
-	log.Printf("💻 Embedded Web UI: http://localhost:%s", port)
+	log.Printf("🔒 STRICT MODE: HTTP/1.1 is 100%% BLOCKED")
 
 	if err := http.ListenAndServe(":"+port, h2cHandler); err != nil {
 		log.Fatalf("Server error: %v", err)

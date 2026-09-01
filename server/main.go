@@ -64,9 +64,17 @@ func generateCert() (tls.Certificate, error) {
 	return tls.X509KeyPair(certPEM, keyPEM)
 }
 
-// loggingMiddleware logs incoming request protocols (HTTP/2, ALPN, Connect, gRPC, gRPC-Web)
+// loggingMiddleware enforces HTTP/2 ONLY and rejects HTTP/1.1
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Strict HTTP/2 enforcement: Reject HTTP/1.0 and HTTP/1.1
+		if r.ProtoMajor < 2 {
+			log.Printf("🚫 [HTTP/1.1 BLOCKED] Rejected %s %s from %s (Transport: %s)",
+				r.Method, r.URL.Path, r.RemoteAddr, r.Proto)
+			http.Error(w, "HTTP Version Not Supported: This server strictly requires HTTP/2 (h2). HTTP/1.1 is disabled.", http.StatusHTTPVersionNotSupported)
+			return
+		}
+
 		// Ignore health check from cluttering logs
 		if r.URL.Path == "/healthz" {
 			next.ServeHTTP(w, r)
@@ -86,17 +94,15 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			rpcProtocol = "gRPC"
 		}
 
-		// HTTP transport protocol
-		httpVersion := r.Proto // "HTTP/2.0" or "HTTP/1.1"
 		alpn := "none"
 		if r.TLS != nil && r.TLS.NegotiatedProtocol != "" {
 			alpn = r.TLS.NegotiatedProtocol
 		}
 
-		log.Printf("🌐 [REQUEST] %s %s | Transport: %s (ALPN: %s) | RPC: %s | Content-Type: %s | Client: %s",
+		log.Printf("🌐 [HTTP/2 REQUEST] %s %s | Transport: %s (ALPN: %s) | RPC: %s | Content-Type: %s | Client: %s",
 			r.Method,
 			r.URL.Path,
-			httpVersion,
+			r.Proto,
 			alpn,
 			rpcProtocol,
 			ct,
@@ -119,7 +125,7 @@ func main() {
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK (Protocol: " + r.Proto + ")"))
+		_, _ = w.Write([]byte("OK (Strict HTTP/2 Only)"))
 	})
 
 	// Configure CORS for Connect-Web
@@ -137,7 +143,7 @@ func main() {
 		MaxAge: 7200,
 	}).Handler(mux)
 
-	// Wrap with protocol logging middleware
+	// Wrap with strict HTTP/2 protocol logging middleware
 	loggedHandler := loggingMiddleware(corsHandler)
 
 	// Generate / Load TLS Certificate
@@ -151,10 +157,10 @@ func main() {
 		port = "8085"
 	}
 
-	// TLS Config with explicit "h2" ALPN
+	// TLS Config with STRICT "h2" ONLY ALPN (HTTP/1.1 removed)
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{tlsCert},
-		NextProtos:   []string{"h2", "http/1.1"},
+		NextProtos:   []string{"h2"},
 	}
 
 	srv := &http.Server{
@@ -168,9 +174,9 @@ func main() {
 		log.Fatalf("Failed to configure HTTP/2: %v", err)
 	}
 
-	log.Printf("🚀 ConnectRPC HTTPS / HTTP/2 Server: https://localhost:%s", port)
+	log.Printf("🚀 ConnectRPC HTTPS / HTTP/2-ONLY Server: https://localhost:%s", port)
 	log.Printf("📡 Service endpoint: %s", path)
-	log.Printf("🔒 ALPN: h2, http/1.1 enabled")
+	log.Printf("🔒 STRICT ALPN: ['h2'] ONLY (HTTP/1.1 is completely DISABLED)")
 
 	if err := srv.ListenAndServeTLS("", ""); err != nil {
 		log.Fatalf("Server error: %v", err)

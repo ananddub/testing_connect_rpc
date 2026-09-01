@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Same-origin connection via Vite proxy (Zero SSL/CORS blocking in Chrome)
+// Original standard ConnectRPC transport over HTTP
 const transport = createConnectTransport({
-  baseUrl: "",
+  baseUrl: "http://localhost:8085",
 });
 
 export const todoClient = createClient(TodoService, transport);

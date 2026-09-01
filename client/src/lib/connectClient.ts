@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Default ConnectRPC transport over HTTP/2 (Fetch ReadableStream for streaming)
+// ConnectRPC client over HTTPS / HTTP/2 (ALPN h2)
 const transport = createConnectTransport({
-  baseUrl: "http://localhost:8085",
+  baseUrl: "https://localhost:8085",
 });
 
 export const todoClient = createClient(TodoService, transport);

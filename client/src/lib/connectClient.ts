@@ -5,9 +5,9 @@ import { TodoService, ActionType, EventType, type TodoItem } from "../gen/todo/v
 export { TodoService, ActionType, EventType };
 export type { TodoItem };
 
-// Direct browser connection to Go HTTPS / HTTP/2 backend
+// Same-origin connection via Vite proxy (Zero SSL/CORS blocking in Chrome)
 const transport = createConnectTransport({
-  baseUrl: "https://localhost:8085",
+  baseUrl: "",
 });
 
 export const todoClient = createClient(TodoService, transport);

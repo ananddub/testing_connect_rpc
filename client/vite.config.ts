@@ -13,5 +13,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    proxy: {
+      '/todo.v1.TodoService': {
+        target: 'https://localhost:8085',
+        secure: false,
+        changeOrigin: true,
+      },
+    },
   },
 })
